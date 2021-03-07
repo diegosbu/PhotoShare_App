@@ -13,6 +13,7 @@ import flask
 from flask import Flask, Response, request, render_template, redirect, url_for
 from flaskext.mysql import MySQL
 import flask_login
+from config import *
 
 #for image uploading
 import os, base64
@@ -22,10 +23,10 @@ app = Flask(__name__)
 app.secret_key = 'super secret string'  # Change this!
 
 #These will need to be changed according to your creditionals
-app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = '#PASSWORD'
-app.config['MYSQL_DATABASE_DB'] = 'photoshare'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+app.config['MYSQL_DATABASE_USER'] = config.User
+app.config['MYSQL_DATABASE_PASSWORD'] = config.Password
+app.config['MYSQL_DATABASE_DB'] = config.DB
+app.config['MYSQL_DATABASE_HOST'] = config.Host
 mysql.init_app(app)
 
 #begin code used for login
