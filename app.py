@@ -13,7 +13,7 @@ import flask
 from flask import Flask, Response, request, render_template, redirect, url_for
 from flaskext.mysql import MySQL
 import flask_login
-from config import *
+import config
 
 #for image uploading
 import os, base64
