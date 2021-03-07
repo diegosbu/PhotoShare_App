@@ -21,8 +21,8 @@ CREATE TABLE Users
 CREATE TABLE Photos 
 (	
   photo_id INTEGER AUTO_INCREMENT,
+	imgdata VARBINARY(8) NOT NULL,
   user_id INTEGER,
-	data VARBINARY(8) NOT NULL,
 	caption VARCHAR(30), 
   CONSTRAINT photos_pk PRIMARY KEY (photo_id)
 );
