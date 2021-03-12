@@ -20,7 +20,7 @@ import os, base64
 
 mysql = MySQL()
 app = Flask(__name__)
-app.secret_key = 'super secret string'  # Change this!
+app.secret_key = 'dev'
 
 #These will need to be changed according to your creditionals
 app.config['MYSQL_DATABASE_USER'] = config.User
@@ -33,7 +33,15 @@ mysql.init_app(app)
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
+
 conn = mysql.connect()
+
+with open('schema.sql', 'r') as f:
+	with conn.cursor() as cursor:
+		for line in f.read().split(';\n'):
+			cursor.execute(line)
+	conn.commit()
+
 cursor = conn.cursor()
 cursor.execute("SELECT email from Users")
 users = cursor.fetchall()
@@ -122,15 +130,21 @@ def register():
 @app.route("/register", methods=['POST'])
 def register_user():
 	try:
+		fname=request.form.get('fname')
+		lname=request.form.get('lname')
 		email=request.form.get('email')
 		password=request.form.get('password')
+		hometown=request.form.get('hometown')
+		dob=request.form.get('dob')
+		gender=request.form.get('gender')
+
 	except:
 		print("couldn't find all tokens") #this prints to shell, end users will not see this (all print statements go to shell)
 		return flask.redirect(flask.url_for('register'))
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (email, password) VALUES ('{0}', '{1}')".format(email, password)))
+		print(cursor.execute("INSERT INTO Users (fname, lname, email, hometown, dob, gender, password) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(fname, lname, email, hometown, dob, gender, password)))
 		conn.commit()
 		#log user in
 		user = User()
@@ -141,15 +155,48 @@ def register_user():
 		print("couldn't find all tokens")
 		return flask.redirect(flask.url_for('register'))
 
+def getUserAlbums(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id, album_name FROM Albums WHERE owner_id = '{0}'".format(uid))
+	return cursor.fetchall()
+
+def getAlbumPhotos(aid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN (SELECT photo_id FROM Inside WHERE album_id = '{0}')".format(aid))
+	return cursor.fetchall() 
+
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
+def getTaggedPhotos(tid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN (SELECT photo_id FROM Tagged WHERE tag_id = '{0}')".format(tid))
+	return cursor.fetchall()
+
+
+
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
-	cursor.execute("SELECT user_id  FROM Users WHERE email = '{0}'".format(email))
+	cursor.execute("SELECT user_id FROM Users WHERE email = '{0}'".format(email))
 	return cursor.fetchone()[0]
+
+def getUsersFriends(email):
+	cursor = conn.cursor()
+	cursor.execute("SELECT friend_id FROM Follows WHERE user_id = '{0}'".format(uid))
+	return cursor.fetchall()
+
+def insertFriends(uid):
+	pass
+
+def insertAlbum():
+	pass
+
+# def insertTags():
+# 	cursor = conn.cursor()
+# 	cursor.execute("INSERT INTO  '{0}'".format(uid))
+# 	return cursor.fetchall()
 
 def isEmailUnique(email):
 	#use this to check if a email has already been registered
@@ -164,7 +211,8 @@ def isEmailUnique(email):
 @app.route('/profile')
 @flask_login.login_required
 def protected():
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile")
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersPhotos(uid), albums=getUsersAlbums(uid), base64=base64)
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -181,7 +229,8 @@ def upload_file():
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Pictures (imgdata, user_id, caption) VALUES (%s, %s, %s )''' ,(photo_data,uid, caption))
+		cursor.execute('''INSERT INTO Photos (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data,uid, caption))
+		cursor.execute()
 		conn.commit()
 		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
 	#The method is GET so we return a  HTML form to upload the a photo.
@@ -193,7 +242,7 @@ def upload_file():
 #default page
 @app.route("/", methods=['GET'])
 def hello():
-	return render_template('hello.html', message='Welecome to Photoshare')
+	return render_template('hello.html', message='Welcome to Photoshare')
 
 
 if __name__ == "__main__":
