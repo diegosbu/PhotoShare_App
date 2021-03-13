@@ -207,7 +207,7 @@ def deleteFriends(fid):
 
 def insertAlbum(uid, aname, date):
 	cursor = conn.cursor()
-	print(cursor.execute("INSERT INTO Follows (album_name, owner_id, date_created) VALUES ('{0}', '{1}', '{2}')" \
+	print(cursor.execute("INSERT INTO Albums (album_name, owner_id, date_created) VALUES ('{0}', '{1}', '{2}')" \
 							.format(aname, uid, date)))
 	conn.commit()
 
@@ -215,12 +215,12 @@ def deletePhoto(pid):
 	cursor = conn.cursor()
 	print(cursor.execute("DELETE FROM Photos WHERE photo_id = '{0}'".format(pid)))
 	conn.commit()
+	print(cursor.rowcount, "record(s) deleted")
 
 def deleteAlbums (aid):
 	cursor = conn.cursor()
 	print(cursor.execute("DELETE FROM Albums WHERE album_id = '{0}'".format(aid)))
 	conn.commit()
-	print(cursor.rowcount, "record(s) deleted")
 
 def insertPhotoAlbum(aid, pid):
 	cursor = conn.cursor()
@@ -255,13 +255,13 @@ def protected():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersPhotos(uid), albums=getUserAlbums(uid), base64=base64)
 
-@app.route('/delete/<int:photo_id>', methods=['Post'])
+@app.route('/delete/p<int:photo_id>', methods=['Post'])
 @flask_login.login_required
 def delete_photo(photo_id):
 	deletePhoto(photo_id)
 	return redirect(url_for('protected'))
 
-@app.route('/delete/<int:album_id>', methods=['Post'])
+@app.route('/delete/a<int:album_id>', methods=['Post'])
 @flask_login.login_required
 def delete_album(album_id):
 	deleteAlbums(album_id)
