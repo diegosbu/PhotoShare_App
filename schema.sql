@@ -11,8 +11,7 @@ CREATE TABLE IF NOT EXISTS Users(
 	gender VARCHAR(100),
 	password VARCHAR(100) NOT NULL,
 	UNIQUE (email),
-  CONSTRAINT users_pk PRIMARY KEY (user_id)
-);
+  CONSTRAINT users_pk PRIMARY KEY (user_id));
 
 CREATE TABLE IF NOT EXISTS Photos(	
   photo_id INTEGER AUTO_INCREMENT,
@@ -44,7 +43,7 @@ CREATE TABLE IF NOT EXISTS Comments(
 );
 
 CREATE TABLE IF NOT EXISTS Tags( 
-  tag_id INTEGER,
+  tag_id INTEGER AUTO_INCREMENT,
   tag_name VARCHAR(30) NOT NULL,
   CONSTRAINT tags_pk PRIMARY KEY (tag_id) 
 );
@@ -62,12 +61,11 @@ CREATE TABLE IF NOT EXISTS Follows(
 	friend_id INTEGER,
   CONSTRAINT follows_pk PRIMARY KEY (user_id, friend_id),
   FOREIGN KEY (user_id) REFERENCES Users(user_id) ON UPDATE CASCADE ON DELETE CASCADE,
-  FOREIGN KEY (friend_id) REFERENCES Users(user_id) ON UPDATE CASCADE ON DELETE CASCADE,
-  CHECK ()
+  FOREIGN KEY (friend_id) REFERENCES Users(user_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS Inside( 
-  album_id INTEGER,
+CREATE TABLE IF NOT EXISTS PhotoAlbums( 
+  album_id INTEGER NOT NULL,
 	photo_id INTEGER,
   CONSTRAINT photo_album_pk PRIMARY KEY (photo_id),
   FOREIGN KEY (album_id) REFERENCES Albums(album_id) ON UPDATE CASCADE ON DELETE CASCADE,

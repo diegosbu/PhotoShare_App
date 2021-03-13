@@ -10,6 +10,7 @@
 ###################################################
 
 import flask
+from datetime import datetime
 from flask import Flask, Response, request, render_template, redirect, url_for
 from flaskext.mysql import MySQL
 import flask_login
@@ -33,7 +34,6 @@ mysql.init_app(app)
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
-
 conn = mysql.connect()
 
 with open('schema.sql', 'r') as f:
@@ -41,10 +41,6 @@ with open('schema.sql', 'r') as f:
 		for line in f.read().split(';\n'):
 			cursor.execute(line)
 	conn.commit()
-
-cursor = conn.cursor()
-cursor.execute("SELECT email from Users")
-users = cursor.fetchall()
 
 def getUserList():
 	cursor = conn.cursor()
@@ -144,7 +140,9 @@ def register_user():
 	cursor = conn.cursor()
 	test =  isEmailUnique(email)
 	if test:
-		print(cursor.execute("INSERT INTO Users (fname, lname, email, hometown, dob, gender, password) VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')".format(fname, lname, email, hometown, dob, gender, password)))
+		print(cursor.execute("INSERT INTO Users (fname, lname, email, hometown, dob, gender, password) \
+								VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')"
+								.format(fname, lname, email, hometown, dob, gender, password)))
 		conn.commit()
 		#log user in
 		user = User()
@@ -162,7 +160,8 @@ def getUserAlbums(uid):
 
 def getAlbumPhotos(aid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN (SELECT photo_id FROM Inside WHERE album_id = '{0}')".format(aid))
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN \
+					(SELECT photo_id FROM PhotoAlbum WHERE album_id = '{0}')".format(aid))
 	return cursor.fetchall() 
 
 def getUsersPhotos(uid):
@@ -172,31 +171,73 @@ def getUsersPhotos(uid):
 
 def getTaggedPhotos(tid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN (SELECT photo_id FROM Tagged WHERE tag_id = '{0}')".format(tid))
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN \
+					(SELECT photo_id FROM Tagged WHERE tag_id = '{0}')".format(tid))
 	return cursor.fetchall()
-
-
 
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
 	cursor.execute("SELECT user_id FROM Users WHERE email = '{0}'".format(email))
 	return cursor.fetchone()[0]
 
-def getUsersFriends(email):
+def getUsersFriends(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT friend_id FROM Follows WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
-def insertFriends(uid):
-	pass
+def getFriendsofFriends(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Follows WHERE friend_id IN dbo.getUsersFriends('{0}') \
+					AND user_id <> '{0}'".format(uid))
+	return cursor.fetchall()
 
-def insertAlbum():
-	pass
 
-# def insertTags():
-# 	cursor = conn.cursor()
-# 	cursor.execute("INSERT INTO  '{0}'".format(uid))
-# 	return cursor.fetchall()
+def insertFriends(email1, email2):
+	cursor = conn.cursor()
+	uid1 = getUserIdFromEmail(email1)
+	uid2 = getUserIdFromEmail(email2)
+	print(cursor.execute("INSERT INTO Follows (user_id, friend_id) VALUES ('{0}', '{1}')" \
+							.format(uid1, uid2)))
+	conn.commit()
+
+def deleteFriends(fid):
+	cursor = conn.cursor()
+	print(cursor.execute("DELETE FROM Follows WHERE friend_id = '{0}'".format(fid)))
+	conn.commit()
+
+def insertAlbum(uid, aname, date):
+	cursor = conn.cursor()
+	print(cursor.execute("INSERT INTO Follows (album_name, owner_id, date_created) VALUES ('{0}', '{1}', '{2}')" \
+							.format(aname, uid, date)))
+	conn.commit()
+
+def deletePhoto(pid):
+	cursor = conn.cursor()
+	print(cursor.execute("DELETE FROM Photos WHERE photo_id = '{0}'".format(pid)))
+	conn.commit()
+
+def deleteAlbums (aid):
+	cursor = conn.cursor()
+	print(cursor.execute("DELETE FROM Albums WHERE album_id = '{0}'".format(aid)))
+	conn.commit()
+	print(cursor.rowcount, "record(s) deleted")
+
+def insertPhotoAlbum(aid, pid):
+	cursor = conn.cursor()
+	print(cursor.execute("INSERT INTO PhotoAlbums (album_id, photo_id) VALUES ('{0}', '{1}')" \
+							.format(aid, pid)))
+	conn.commit()
+	
+def insertTags(tname):
+	cursor = conn.cursor()
+	print(cursor.execute("INSERT INTO Tags (tag_name) SELECT * FROM (SELECT '{0}') AS tmp \
+							WHERE NOT EXISTS (SELECT tag_id FROM Tags WHERE tag_name = '{0}') LIMIT 1".format(tname)))
+	conn.commit()
+
+def deleteTags(tname):
+	cursor = conn.cursor()
+	print(cursor.execute("DELETE FROM Tags WHERE tag_name = '{0}'".format(tname)))
+	conn.commit()
 
 def isEmailUnique(email):
 	#use this to check if a email has already been registered
@@ -212,7 +253,19 @@ def isEmailUnique(email):
 @flask_login.login_required
 def protected():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersPhotos(uid), albums=getUsersAlbums(uid), base64=base64)
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersPhotos(uid), albums=getUserAlbums(uid), base64=base64)
+
+@app.route('/delete/<int:photo_id>', methods=['Post'])
+@flask_login.login_required
+def delete_photo(photo_id):
+	deletePhoto(photo_id)
+	return redirect(url_for('protected'))
+
+@app.route('/delete/<int:album_id>', methods=['Post'])
+@flask_login.login_required
+def delete_album(album_id):
+	deleteAlbums(album_id)
+	return redirect(url_for('protected'))
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -229,15 +282,29 @@ def upload_file():
 		caption = request.form.get('caption')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
-		cursor.execute('''INSERT INTO Photos (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data,uid, caption))
-		cursor.execute()
+		print(cursor.execute('''INSERT INTO Photos (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption)))
 		conn.commit()
-		return render_template('hello.html', name=flask_login.current_user.id, message='Photo uploaded!', photos=getUsersPhotos(uid),base64=base64)
+		return redirect('profile')
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
 		return render_template('upload.html')
 #end photo uploading code
 
+@app.route('/create', methods=['GET', 'POST'])
+@flask_login.login_required
+def createAlbum():
+	if request.method == 'POST':
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		aname = request.form.get('album_name')
+		cursor = conn.cursor()
+		now = datetime.now()
+		formatted_date = now.strftime('%Y-%m-%d')
+		print(cursor.execute("INSERT INTO Albums (album_name, owner_id, date_created) VALUES ('{0}', '{1}', '{2}')".format(aname, uid, formatted_date)))
+		conn.commit()
+		return redirect('profile')
+	#The method is GET so we return a  HTML form to create an album.
+	else:
+		return render_template('create.html')
 
 #default page
 @app.route("/", methods=['GET'])
