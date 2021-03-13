@@ -1,0 +1,54 @@
+<!doctype html>
+{% if message %}
+  <h4>{{message}}!</h4>
+{% endif %}
+<title>Photoshare</title>
+{% if name %}
+  <h1>Hello {{ name }}!</h1>
+{% endif %}
+
+{% if picsinalbum %}
+<h2>Here are photos in your album</h2>
+    <ul>
+    {% for photo in picsinalbum %}
+        <li>{{photo[2]}}<br>
+        <form action="{{ url_for('delete_photo', photo_id = photo[1]) }}" method=post>
+          <input type = submit value = "Delete" />
+        </form>
+        <form action="{{ url_for('remove_photo', photo_id = photo[1]) }}" method=post>
+            <input type = submit value = "Remove from album" />
+        </form>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if photos %}
+<h2>Here are photos not in your album</h2>
+    <ul>
+    {% for photo in photos %}
+        <li>{{photo[2]}}<br>
+        <form action="{{ url_for('delete_photo', photo_id = photo[1]) }}" method=post>
+          <input type = submit value = "Delete" />
+        </form>
+        <form action="{{ url_for('add_photoalbum', photo_id = photo[1]) }}" method=post>
+            <input type = submit value = "Add to album" />
+        </form>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if message is none %}
+  <p>You should <a href='/login'>login!</a></p>
+{% else %}
+  <p> Go to <a href='/profile'>profile?</a></p>
+{% endif %}
+
+
+<ul>
+    <li><a href='/upload'>Upload a photo</a> </li>
+    <li><a href='/create'>Create an album</a> </li>
+    <li><a href='/logout'>Logout</a></li>
+    <li><a href='/'>Home</a></li>
+</ul>

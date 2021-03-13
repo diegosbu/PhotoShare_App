@@ -11,7 +11,7 @@
 
 import flask
 from datetime import datetime
-from flask import Flask, Response, request, render_template, redirect, url_for
+from flask import Flask, Response, request, render_template, redirect, url_for, session
 from flaskext.mysql import MySQL
 import flask_login
 import config
@@ -88,7 +88,7 @@ def login():
 			   <form action='login' method='POST'>
 				<input type='text' name='email' id='email' placeholder='email'></input>
 				<input type='password' name='password' id='password' placeholder='password'></input>
-				<input type='submit' name='submit'></input>
+				<input type='submit' name='submit' value='Log In'></input>
 			   </form></br>
 		   <a href='/'>Home</a>
 			   '''
@@ -161,13 +161,20 @@ def getUserAlbums(uid):
 def getAlbumPhotos(aid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN \
-					(SELECT photo_id FROM PhotoAlbum WHERE album_id = '{0}')".format(aid))
+					(SELECT photo_id FROM PhotoAlbums WHERE album_id = '{0}')".format(aid))
 	return cursor.fetchall() 
 
 def getUsersPhotos(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
+
+#gets photos that don't belong to any albums
+def getUsersFreePhotos(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id NOT IN (SELECT photo_id FROM PhotoAlbums) \
+						AND user_id = '{0}'".format(uid))
+	return cursor.fetchall()
 
 def getTaggedPhotos(tid):
 	cursor = conn.cursor()
@@ -219,7 +226,14 @@ def deletePhoto(pid):
 
 def deleteAlbums (aid):
 	cursor = conn.cursor()
+	print(cursor.execute("DELETE FROM Photos WHERE photo_id IN (SELECT photo_id FROM PhotoAlbums WHERE album_id = \
+							'{0}')".format(aid)))
 	print(cursor.execute("DELETE FROM Albums WHERE album_id = '{0}'".format(aid)))
+	conn.commit()
+
+def deletePhotoAlbum (pid):
+	cursor = conn.cursor()
+	cursor.execute("DELETE FROM PhotoAlbums WHERE photo_id = '{0}'".format(pid))
 	conn.commit()
 
 def insertPhotoAlbum(aid, pid):
@@ -249,23 +263,52 @@ def isEmailUnique(email):
 		return True
 #end login code
 
+def redirect_url(default='index'):
+    return request.args.get('next') or \
+           request.referrer or \
+           url_for(default)
+
 @app.route('/profile')
 @flask_login.login_required
 def protected():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersPhotos(uid), albums=getUserAlbums(uid), base64=base64)
+
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersFreePhotos(uid), albums=getUserAlbums(uid), base64=base64)
 
 @app.route('/delete/p<int:photo_id>', methods=['Post'])
 @flask_login.login_required
 def delete_photo(photo_id):
 	deletePhoto(photo_id)
-	return redirect(url_for('protected'))
+	return redirect(request.referrer)
+
+@app.route('/add_photo/<int:photo_id>', methods=['Post'])
+@flask_login.login_required
+def add_photoalbum(photo_id):
+	pid = photo_id
+	insertPhotoAlbum(session['aid'], pid)
+	return redirect(request.referrer)
+
+@app.route('/remove_photo/<int:photo_id>', methods=['Post'])
+@flask_login.login_required
+def remove_photo(photo_id):
+	pid = photo_id
+	deletePhotoAlbum(pid)
+	return redirect(request.referrer)
 
 @app.route('/delete/a<int:album_id>', methods=['Post'])
 @flask_login.login_required
 def delete_album(album_id):
 	deleteAlbums(album_id)
 	return redirect(url_for('protected'))
+
+#Lets user add/remove/delete album photos
+@app.route('/edit/a<int:album_id>', methods=['Post', 'Get'])
+@flask_login.login_required
+def edit_album(album_id):
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	aid = album_id
+	session['aid'] = aid
+	return render_template('editalbum.html', name=flask_login.current_user.id, message="Add or remove photos from your album", photos=getUsersFreePhotos(uid), picsinalbum=getAlbumPhotos(aid), base64=base64)
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML

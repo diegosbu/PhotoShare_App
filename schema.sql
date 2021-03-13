@@ -1,5 +1,7 @@
 CREATE DATABASE IF NOT EXISTS photoshare;
 USE photoshare;
+SELECT * FROM Users;
+SELECT * FROM Photos;
 
 CREATE TABLE IF NOT EXISTS Users(	
   user_id INTEGER AUTO_INCREMENT,

@@ -28,6 +28,9 @@
         <li>{{album[1]}}<br>
         <form action="{{ url_for('delete_album', album_id = album[0]) }}" method=post>
           <input type = submit value = "Delete" />
+        </form>
+        <form action="{{ url_for('edit_album', album_id = album[0]) }}" method=post>
+          <input type = submit value = "Modify" />
         </form></li>
     {% endfor %}
     </ul>
