@@ -1,7 +1,11 @@
 <!-- author ben lawson (balawson@bu.edu) -->
 <!doctype html>
 <form action="{{ url_for('pass_user_profile') }}" method=post>
-  <input type="text" placeholder="Input the users email..." name="search"></input>
+  <input type="text" placeholder="Input the users email..." name="search" required = "true"></input>
+  <input type = submit value = "Search" />
+</form>
+<form action="{{ url_for('pass_comment') }}" method=post>
+  <input type="text" placeholder="Search for comments" name="searchcomment" required = "true"></input>
   <input type = submit value = "Search" />
 </form>
 {% if message %}

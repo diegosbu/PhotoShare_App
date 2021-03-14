@@ -191,10 +191,16 @@ def getTaggedPhotos(tid):
 					(SELECT photo_id FROM Tagged WHERE tag_id = '{0}')".format(tid))
 	return cursor.fetchall()
 
-# Gets comments info
+# Gets comments info related to a photo
 def getComments(pid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT comment_text, email, date_created FROM Comments, Users WHERE photo_id = {0} AND user_id = owner_id".format(pid))
+	return cursor.fetchall()
+
+# Gets comment info of all matching comments, and orders users by total matching comments in descending
+def getsMatchComment(ctxt):
+	cursor = conn.cursor()
+	cursor.execute("SELECT U1.comment_text, U1.email FROM (SELECT comment_text, email, date_created FROM Comments, Users WHERE comment_text = '{0}' AND user_id = owner_id) U1, (SELECT email, COUNT(comment_text) AS num FROM (SELECT comment_text, email, date_created FROM Comments, Users WHERE comment_text = '{0}' AND user_id = owner_id) U3 GROUP BY email ORDER BY num DESC) U2 WHERE U1.email = U2.email ORDER BY U2.num DESC, U2.email DESC".format(ctxt))
 	return cursor.fetchall()
 
 # Gets user emails of those who liked photo
@@ -206,7 +212,7 @@ def getLikes(pid):
 # Checks if user is among the list of likes
 def userinLikes(uid, pid):
 	cursor = conn.cursor
-	cursor.execute("SELECT COUNT(*) FROM Likes WHERE user_id IN (SELECT user_id FROM Likes WHERE photo_id = '{0}' AND user_id = {1})".format(pid, uid))
+	cursor.execute("SELECT COUNT(*) FROM Likes WHERE user_id IN (SELECT user_id FROM Likes WHERE photo_id = '{0}' AND user_id = '{1}')".format(pid, uid))
 
 # Gets number of likes for a photo
 def getNumLikes(pid):
@@ -222,29 +228,34 @@ def getUserIdFromEmail(email):
 #Gets friends list
 def getUsersFriends(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT friend_id FROM Follows WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT friend_id FROM Friends WHERE user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
 #Gets users with mutual friends
 def getFriendsofFriends(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT user_id FROM Follows WHERE friend_id IN dbo.getUsersFriends('{0}') \
+	cursor.execute("SELECT user_id FROM Friends WHERE friend_id IN dbo.getUsersFriends('{0}') \
 					AND user_id <> '{0}'".format(uid))
 	return cursor.fetchall()
+
+#Calculates/retrieves a user's contribution score
+# def getContScore(uid):
+# 	cursor = conn.cursor()
+# 	cursor.execute("")
 
 #Inserts friend relationship
 def insertFriends(email1, email2):
 	cursor = conn.cursor()
 	uid1 = getUserIdFromEmail(email1)
 	uid2 = getUserIdFromEmail(email2)
-	print(cursor.execute("INSERT INTO Follows (user_id, friend_id) VALUES ('{0}', '{1}')" \
+	print(cursor.execute("INSERT INTO Friends (user_id, friend_id) VALUES ('{0}', '{1}')" \
 							.format(uid1, uid2)))
 	conn.commit()
 
 #Deletes friend relationship
 def deleteFriends(fid):
 	cursor = conn.cursor()
-	print(cursor.execute("DELETE FROM Follows WHERE friend_id = '{0}'".format(fid)))
+	print(cursor.execute("DELETE FROM Friends WHERE friend_id = '{0}'".format(fid)))
 	conn.commit()
 
 #Inserts album info
@@ -355,10 +366,8 @@ def viewalbum(album_id):
 
 #Loads page for viewing other Users' album
 @app.route('/user/viewalbum<int:album_id>')
-@flask_login.login_required
 def viewUseralbum(album_id):
-	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('editalbum.html', message="Here's their album", name=flask_login.current_user.id, picsinalbum=getAlbumPhotos(album_id), owner = False, edit = False, base64=base64)
+	return render_template('editalbum.html', message="Here's their album", picsinalbum=getAlbumPhotos(album_id), owner = False, edit = False, base64=base64)
 
 #Loads page for viewing personal posts/comments
 @app.route('/profile/viewpost<int:photo_id>')
@@ -370,8 +379,7 @@ def viewpost(photo_id):
 #Loads page for viewing other Users' personal posts/comments
 @app.route('/user/viewpost<int:photo_id>')
 def viewuserpost(photo_id):
-	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('viewpost.html', name=flask_login.current_user.id, photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = False, base64=base64)
+	return render_template('viewpost.html', photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = False, base64=base64)
 
 #Handles comment insertion into a post
 @app.route('/user/addcomment<int:photo_id>', methods=['Post'])
@@ -380,6 +388,17 @@ def addcomment(photo_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	insertComments(ctxt, uid, photo_id)
 	return redirect(request.referrer)
+
+@app.route('/showcommentsearch/<clist>')
+def show_commentsearch(clist):
+	return render_template('comments.html', comments = clist)
+
+#Passes comment search query and retrieves search results
+@app.route('/commentsearch', methods=['Post'])
+def pass_comment():
+	ctxt = request.form.get('searchcomment')
+	cmatch = getsMatchComment(ctxt)
+	return redirect(url_for('show_commentsearch', clist = cmatch))
 
 
 #Handles photo deletion

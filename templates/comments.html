@@ -1,0 +1,25 @@
+<!doctype html>
+
+
+{% if comments %}
+<h2>Here are the retrieved comments and the corresponding users</h2>
+    <ul>
+    {% for comment in comments %}
+      {{comment}}
+    {% endfor %}
+    </ul>
+{% endif %}
+
+
+{% if message is none %}
+  <p>You should <a href='/login'>login!</a></p>
+{% else %}
+  <p> Go to <a href='/profile'>profile?</a></p>
+{% endif %}
+
+<ul>
+<li><a href='/upload'>Upload a photo</a> </li>
+<li><a href='/create'>Create an album</a> </li>
+<li><a href='/logout'>Logout</a></li>
+<li><a href='/'>Home</a></li>
+</ul>
