@@ -1,9 +1,5 @@
 <!-- author ben lawson (balawson@bu.edu) -->
 <!doctype html>
-<form action="{{ url_for('pass_user_profile') }}" method=post>
-  <input type="text" placeholder="Input the users email..." name="search"></input>
-  <input type = submit value = "Search" />
-</form>
 {% if message %}
   <h4>{{message}}!</h4>
 {% endif %}
@@ -13,51 +9,32 @@
 {% endif %}
 
 {% if photos %}
-{% if owner %}
 <h2>Here are your photos</h2>
-{% else %}
-<h2>Here are their photos</h2>
-{% endif %}
     <ul>
     {% for photo in photos %}
       <li>{{photo[2]}}<br>
-        {% if owner %}
         <form action="{{ url_for('delete_photo', photo_id = photo[1]) }}" method=post>
           <input type = submit value = "Delete" />
         </form>
         <a href = "{{ url_for('viewpost', photo_id = photo[1]) }}">
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
         </a>
-        {% else %}
-        <a href = "{{ url_for('viewuserpost', photo_id = photo[1]) }}">
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
-        </a>
-        {% endif %}
       </li>
     {% endfor %}
     </ul>
 {% endif %}
 
 {% if albums %}
-{% if owner %}
 <h2>Here are your albums</h2>
-{% else %}
-<h2>Here are their albums</h2>
-{% endif %}
     <ul>
     {% for album in albums %}
-        {% if owner%}
-        <li><a href =  "{{ url_for('viewalbum', album_id = album[0]) }}"> {{album[1]}} </a> <br>
+        <li>{{album[1]}}<br>
         <form action="{{ url_for('delete_album', album_id = album[0]) }}" method=post>
           <input type = submit value = "Delete" />
         </form>
         <form action="{{ url_for('edit_album', album_id = album[0]) }}" method=post>
           <input type = submit value = "Modify" />
         </form></li>
-        {% else %}
-        <li><a href =  "{{ url_for('viewUseralbum', album_id = album[0]) }}"> {{album[1]}} </a> <br>
-        </li>
-        {% endif %}
     {% endfor %}
     </ul>
 {% endif %}

@@ -12,19 +12,19 @@
         <div id="content">
             <form method="post" action="{{ url_for('register_user') }}">
                 <label for="fname">Enter your first name:</label>
-                <input type="text" name="fname" /><br />
+                <input type="text" name="fname" required='true' /><br />
                 <label for="lname">Enter your last name:</label>
-                <input type="text" name="lname" /><br />
+                <input type="text" name="lname" required='true' /><br />
                 <label for="email">Enter your email:</label>
-                <input type="email" name="email" /><br />
+                <input type="email" name="email" required='true' /><br />
                 <label for="dob">Enter your date of birth:</label>
-                <input type="date" name="dob" /><br />
+                <input type="date" name="dob" required='true' /><br />
                 <label for="hometown">Enter your hometown:</label>
                 <input type="text" name="hometown" /><br />
-                <label for="gender">Enter your gender:</label>
+                <label for="gender">Enter your gender (choose Male or Female):</label>
                 <input type="text" name="gender" /><br />
                 <label for="password">Enter password:</label>
-                <input type="password" name="password" /><br />
+                <input type="password" name="password" required='true' /><br />
                 <input type="submit" />
             </form>
          </div>
