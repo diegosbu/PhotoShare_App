@@ -238,10 +238,43 @@ def getFriendsofFriends(uid):
 					AND user_id <> '{0}'".format(uid))
 	return cursor.fetchall()
 
-#Calculates/retrieves a user's contribution score
-# def getContScore(uid):
-# 	cursor = conn.cursor()
-# 	cursor.execute("")
+#Calculates/retrieves user's contribution score leaderboard
+def getContScore():
+	cursor = conn.cursor()
+	cursor.execute("SELECT U3.score, U4.email \
+					FROM \
+						(SELECT U1.owner_id, (SUM(numComments + numPhotos)) AS score \
+						FROM (	SELECT COUNT(*) AS numComments, owner_id FROM Comments \
+								GROUP BY owner_id ORDER BY numComments DESC) U1, \
+						 	(	SELECT COUNT(*) AS numPhotos, user_id FROM Photos \
+								GROUP BY user_id ORDER BY numPhotos DESC) U2 \
+						WHERE U1.owner_id = U2.user_id \
+						GROUP BY U1.owner_id ORDER BY score DESC) U3, Users U4 \
+					WHERE U3.owner_id = U4.user_id AND U4.email IS NOT NULL \
+					ORDER BY U3.score DESC \
+					LIMIT 10")
+	return cursor.fetchall()
+
+def parseContScore():
+	cursor = conn.cursor()
+	cursor.execute("SELECT U1.score, U2.email \
+					FROM dbo.getContScore() U1, Users U2 \
+					WHERE U1.owner_id = U2.user_id AND U2.email IS NOT NULL \
+					ORDER BY U1.score DESC \
+					LIMIT 10")
+	return cursor.fetchall()
+
+#Handles insertion of anonymous user (for use in letting them add comments)
+def insertUsers(hmtown):
+	cursor = conn.cursor()
+	cursor.execute("INSERT INTO Users (hometown) SELECT * FROM (SELECT '{0}') AS tmp WHERE NOT EXISTS (SELECT hometown FROM Users WHERE hometown = '{0}' LIMIT 1)".format(hmtown))
+	conn.commit()
+
+#Retrieves user id based on hometown, for anonymous user
+def getUsers(hmtown):
+	cursor = conn.cursor()
+	cursor.execute("SELECT user_id FROM Users WHERE hometown = '{0}'".format(hmtown))
+	return cursor.fetchone()[0]
 
 #Inserts friend relationship
 def insertFriends(email1, email2):
@@ -297,7 +330,7 @@ def insertPhotoAlbum(aid, pid):
 def insertTags(tname):
 	cursor = conn.cursor()
 	print(cursor.execute("INSERT INTO Tags (tag_name) SELECT * FROM (SELECT '{0}') AS tmp \
-							WHERE NOT EXISTS (SELECT tag_id FROM Tags WHERE tag_name = '{0}') LIMIT 1".format(tname)))
+							WHERE NOT EXISTS (SELECT tag_name FROM Tags WHERE tag_name = '{0}' LIMIT 1)".format(tname)))
 	conn.commit()
 
 #Inserts relationship between photo and tag
@@ -381,17 +414,23 @@ def viewpost(photo_id):
 def viewuserpost(photo_id):
 	return render_template('viewpost.html', photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = False, base64=base64)
 
-#Handles comment insertion into a post
+#Handles comment insertion into a post, also checks for anonymous user
 @app.route('/user/addcomment<int:photo_id>', methods=['Post'])
 def addcomment(photo_id):
 	ctxt = request.form.get('comment')
-	uid = getUserIdFromEmail(flask_login.current_user.id)
-	insertComments(ctxt, uid, photo_id)
+	if flask_login.current_user.is_authenticated:
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		insertComments(ctxt, uid, photo_id)
+	else:
+		insertUsers("doesnotexist")
+		uid = getUsers("doesnotexist")
+		insertComments(ctxt, uid, photo_id)
 	return redirect(request.referrer)
 
+#Displays search results
 @app.route('/showcommentsearch/<clist>')
 def show_commentsearch(clist):
-	return render_template('comments.html', comments = clist)
+	return render_template('query.html', comments = clist)
 
 #Passes comment search query and retrieves search results
 @app.route('/commentsearch', methods=['Post'])
@@ -399,6 +438,11 @@ def pass_comment():
 	ctxt = request.form.get('searchcomment')
 	cmatch = getsMatchComment(ctxt)
 	return redirect(url_for('show_commentsearch', clist = cmatch))
+
+@app.route('/pass_leaderboard', methods=['Post'])
+def pass_leaderboard():
+	ldb = getContScore()
+	return render_template('query.html', leaderboard = ldb)
 
 
 #Handles photo deletion

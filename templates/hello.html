@@ -8,6 +8,9 @@
   <input type="text" placeholder="Search for comments" name="searchcomment" required = "true"></input>
   <input type = submit value = "Search" />
 </form>
+<form action="{{ url_for('pass_leaderboard') }}" method=post>
+  <input type = submit value = "Top Contributors!" />
+</form>
 {% if message %}
   <h4>{{message}}!</h4>
 {% endif %}
