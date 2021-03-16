@@ -201,10 +201,10 @@ def getUsersFreePhotos(uid):
 	return cursor.fetchall()
 
 #Gets photos with specific tag
-def getTaggedPhotos(tid):
+def getTaggedPhotos(tname):
 	cursor = conn.cursor()
 	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN \
-					(SELECT photo_id FROM Tagged WHERE tag_id = '{0}')".format(tid))
+					(SELECT photo_id FROM Tagged WHERE tag_name = '{0}')".format(tname))
 	return cursor.fetchall()
 
 # Gets comments info related to a photo
@@ -510,6 +510,13 @@ def show_friends(uid):
 def recommend_friends(uid):
 	friendoffriend = getFriendsofFriends(uid)
 	return render_template('query.html', flist = friendoffriend)
+
+
+@app.route('/profile/tagsearch/<tag_name><owns>', methods=['Post'])
+def tag_search(tag_name, owns):
+	if owner:
+		return render_template('query.html', myt = getTaggedPhotos(tag_name), allt = getTaggedPhotos(tag_name))
+	return render_template('query.html', allt = getTaggedPhotos(tag_name))
 
 
 #Displays search results
