@@ -544,6 +544,24 @@ def pass_comment():
 	cmatch = getsMatchComment(ctxt)
 	return redirect(url_for('show_commentsearch', clist = cmatch))
 
+@app.route('/phototagsearch/', methods=['Post'])
+def photo_search():
+	tagnames = request.form.get('tagsqueried')
+	photos = []
+	photos2 = []
+	i = 0
+
+	# Checks elements that are in all gettaggedphotos lists
+	for tag in tagnames.split():
+		if i == 0:
+			photos.extend(getTaggedPhotos(tag))
+			i+=1
+		else:
+			photos2 = getTaggedPhotos(tag)
+			photos = [a for a in photos if a in photos2]
+
+	return render_template('query.html', photosearch = photos, base64 = base64)
+
 @app.route('/pass_leaderboard', methods=['Post'])
 def pass_leaderboard():
 	ldb = getContScore()

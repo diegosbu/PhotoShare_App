@@ -8,6 +8,10 @@
   <input type="text" placeholder="Search for comments" name="searchcomment" required = "true"></input>
   <input type = submit value = "Search" />
 </form>
+<form action="{{ url_for('photo_search') }}" method=post>
+  <input type="text" placeholder="Search for photos by tag" name="tagsqueried" required = "true"></input>
+  <input type = submit value = "Search" />
+</form>
 <form action="{{ url_for('pass_leaderboard') }}" method=post>
   <input type = submit value = "Top Contributors!" />
 </form>

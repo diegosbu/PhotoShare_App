@@ -30,6 +30,18 @@
     </ul>
 {% endif %}
 
+{% if photosearch %}
+<h2>Here are all the photos that have all the tags you requested</h2>
+    <ul>
+    {% for photo in photosearch %}
+      <ul>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+
 {% if currview == 1 %}
 <form action="{{ url_for('tag_searchAll', tag_name = tname, owns = owner, currview = 2) }}" method=post>
   <input type = submit value = "Show sitewide photos" />
