@@ -43,9 +43,8 @@ CREATE TABLE IF NOT EXISTS Comments(
 );
 
 CREATE TABLE IF NOT EXISTS Tags( 
-  tag_id INTEGER AUTO_INCREMENT,
   tag_name VARCHAR(30) NOT NULL,
-  CONSTRAINT tags_pk PRIMARY KEY (tag_id) 
+  CONSTRAINT tags_pk PRIMARY KEY (tag_name) 
 );
 
 CREATE TABLE IF NOT EXISTS Likes( 
@@ -73,9 +72,9 @@ CREATE TABLE IF NOT EXISTS PhotoAlbums(
 );
 
 CREATE TABLE IF NOT EXISTS Tagged( 
-  tag_id INTEGER,
-	photo_id INTEGER,
-  CONSTRAINT tagged_pk PRIMARY KEY (tag_id, photo_id),
-  FOREIGN KEY (tag_id) REFERENCES Tags(tag_id) ON UPDATE CASCADE ON DELETE CASCADE,
+  tag_name VARCHAR(30),
+  photo_id INTEGER,
+  CONSTRAINT tagged_pk PRIMARY KEY (tag_name, photo_id),
+  FOREIGN KEY (tag_name) REFERENCES Tags(tag_name) ON UPDATE CASCADE ON DELETE CASCADE,
   FOREIGN KEY (photo_id) REFERENCES Photos(photo_id) ON UPDATE CASCADE ON DELETE CASCADE
 );

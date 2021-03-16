@@ -172,7 +172,7 @@ def getDefaultAlbum(uid):
 def getDefaultAlbumid(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT album_id FROM Albums WHERE owner_id = {0} AND album_name = 'DEFAULT' LIMIT 1".format(uid))
-	return cursor.fetchone()
+	return cursor.fetchone()[0]
 
 #Gets photos in specific album
 def getAlbumPhotos(aid):
@@ -380,17 +380,17 @@ def setDefaultAlbum(uid, pid):
 
 #Inserts tag info
 def insertTags(tname):
-	cursor = conn.cursor()
-	print(cursor.execute("INSERT INTO Tags (tag_name) SELECT * FROM (SELECT '{0}') AS tmp \
-							WHERE NOT EXISTS (SELECT tag_name FROM Tags WHERE tag_name = '{0}' LIMIT 1)".format(tname)))
-	conn.commit()
+    cursor = conn.cursor()
+    print(cursor.execute("INSERT INTO Tags (tag_name) SELECT * FROM (SELECT '{0}') AS tmp \
+                            WHERE NOT EXISTS (SELECT tag_name FROM Tags WHERE tag_name = '{0}' LIMIT 1)".format(tname)))
+    conn.commit()
 
 #Inserts relationship between photo and tag
 def insertTagged(tname, pid):
-	cursor = conn.cursor()
-	insertTags(tname)
-	print(cursor.execute("INSERT INTO Tagged (photo_id) VALUES ('{0}')".format(pid)))
-	conn.commit()
+    cursor = conn.cursor()
+    #insertTags(tname)
+    print(cursor.execute("INSERT INTO Tagged (photo_id, tag_name) VALUES ('{0}', '{1}')".format(pid, tname)))
+    conn.commit()
 
 #Inserts comment info
 def insertComments(ctxt, uid, pid):
@@ -584,13 +584,17 @@ def upload_file():
 		uid = getUserIdFromEmail(flask_login.current_user.id)
 		imgfile = request.files['photo']
 		caption = request.form.get('caption')
+		tag = request.form.get('tag')
 		photo_data =imgfile.read()
 		cursor = conn.cursor()
 		print(cursor.execute('''INSERT INTO Photos (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption)))
 		conn.commit()
+		pid=cursor.lastrowid
 		aid = getDefaultAlbumid(uid)
-		pid = getlatestPic(uid)
+		pid=cursor.lastrowid
 		insertPhotoAlbum(aid, pid)
+		insertTags(tag)
+		insertTagged(tag, pid)
 		return redirect('profile')
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
