@@ -21,6 +21,17 @@
     </ul>
 {% endif %}
 
+{% if top_tags %}
+<h2>Here are the most widely used tags by users!</h2>
+    <ul>
+    {% for tag in top_tags %}
+      <ul>
+        {{tag[0]}}
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
+
 {% if myt %}
   <h2>Here all your photos with this tag</h2>
     <ul>
