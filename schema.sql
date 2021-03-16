@@ -1,11 +1,6 @@
 CREATE DATABASE IF NOT EXISTS photoshare;
 USE photoshare;
 
-SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN 
-					(SELECT P.photo_id FROM Tagged T, Photos P WHERE T.tag_name = "what" AND P.user_id = 1 AND P.photo_id = T.photo_id);
-
-SELECT * FROM Tagged;
-SELECT album_id FROM Albums WHERE owner_id = 2 AND album_name = 'DEFAULT' LIMIT 1;
 
 CREATE TABLE IF NOT EXISTS Users(	
   user_id INTEGER AUTO_INCREMENT,
