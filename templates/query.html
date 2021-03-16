@@ -1,6 +1,4 @@
 <!doctype html>
-
-
 {% if comments %}
 <h2>Here are the retrieved comments and the corresponding users</h2>
     <ul>
@@ -32,10 +30,11 @@
     </ul>
 {% endif %}
 
-{% if myt %}
-<h2>Here are the most widely used tags by users!</h2>
+{% if currview == 1 %}
+
+<h2>Here are all your photos that have this tag!</h2>
     <ul>
-    {% for photo in myt %}
+    {% for photo in photos %}
       <ul>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
       </ul>

@@ -394,7 +394,6 @@ def insertTags(tname):
 #Inserts relationship between photo and tag
 def insertTagged(tname, pid):
     cursor = conn.cursor()
-    #insertTags(tname)
     print(cursor.execute("INSERT INTO Tagged (photo_id, tag_name) VALUES ('{0}', '{1}')".format(pid, tname)))
     conn.commit()
 
@@ -521,11 +520,12 @@ def recommend_friends(uid):
 	return render_template('query.html', flist = friendoffriend)
 
 
-@app.route('/profile/tagsearch/<tag_name><owns><currview>')
+@app.route('/profile/tagsearch/<tag_name> <owns> <currview>')
 @flask_login.login_required
 def tag_search(tag_name, owns, currview):
+	
 		uid = getUserIdFromEmail(flask_login.current_user.id)
-		return render_template('query.html', currview = 1, owner = owns, myt = getUserTaggedPhotos(tag_name, uid))
+		return render_template('query.html', currview = 1, owner = owns, photos = getUserTaggedPhotos(tag_name, uid), base64 = base64)
 
 #Displays search results
 @app.route('/showcommentsearch/<clist>')
