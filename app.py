@@ -214,8 +214,7 @@ def getUserTags(uid):
 #Gets User's photos with specific tag
 def getUserTaggedPhotos(tname, uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN \
-					(SELECT P.photo_id FROM Tagged T, Photos P WHERE T.tag_name = '{0}' AND P.user_id = '{1}' AND P.photo_id = T.photo_id)".format(tname, uid))
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN (SELECT P.photo_id FROM Tagged T, Photos P WHERE T.tag_name = '{0}' AND P.user_id = '{1}' AND P.photo_id = T.photo_id)".format(tname, uid))
 	return cursor.fetchall()
 
 # Gets comments info related to a photo
@@ -439,7 +438,7 @@ def getPopularTags():
 @flask_login.login_required
 def protected():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", defalbums=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = True, uid1 = uid, base64=base64)
+	return render_template('hello.html', name=flask_login.current_user.id, tags = getUserTags(uid), message="Here's your profile", defalbums=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = True, uid1 = uid, base64=base64)
 
 #Loads Other Users' profiles
 @app.route('/user/<email>')
@@ -466,7 +465,7 @@ def pass_user_profile():
 @flask_login.login_required
 def viewalbum(album_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('editalbum.html', name=flask_login.current_user.id, tags = getUserTags(uid), picsinalbum=getAlbumPhotos(album_id), owner = True, edit = False, base64=base64)
+	return render_template('editalbum.html', name=flask_login.current_user.id, picsinalbum=getAlbumPhotos(album_id), owner = True, edit = False, base64=base64)
 
 #Loads page for viewing other Users' album
 @app.route('/user/viewalbum<int:album_id>')
@@ -522,7 +521,7 @@ def recommend_friends(uid):
 	return render_template('query.html', flist = friendoffriend)
 
 
-@app.route('/profile/tagsearch/<tag_name><owns><currview>', methods=['Post', 'Get'])
+@app.route('/profile/tagsearch/<tag_name><owns><currview>')
 @flask_login.login_required
 def tag_search(tag_name, owns, currview):
 		uid = getUserIdFromEmail(flask_login.current_user.id)

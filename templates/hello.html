@@ -19,6 +19,16 @@
   <h4>{{message}}!</h4>
 {% endif %}
 <title>Photoshare</title>
+
+{% if owner %}
+{% if tags %}
+{% for tag in tags %}
+<a href = "{{ url_for('tag_search', tag_name = tag[0], owns = true, currview = 1) }}">  {{ tag[0] }}  </a>
+{% endfor %}
+{% endif %}
+{% endif %}
+
+
 {% if name %}
   <h1>Hello {{ name }}!</h1>
   <form action="{{ url_for('show_friends', uid = uid1) }}" method=post>

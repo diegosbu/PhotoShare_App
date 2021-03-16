@@ -32,6 +32,17 @@
     </ul>
 {% endif %}
 
+{% if myt %}
+<h2>Here are the most widely used tags by users!</h2>
+    <ul>
+    {% for photo in myt %}
+      <ul>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
+
 {% if allt and currview == myt2%}
   <h2>Here all your photos with this tag</h2>
     <ul>
