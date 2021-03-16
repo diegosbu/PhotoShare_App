@@ -11,6 +11,9 @@
 <form action="{{ url_for('pass_leaderboard') }}" method=post>
   <input type = submit value = "Top Contributors!" />
 </form>
+<form action="{{ url_for('top_tags') }}" method=post>
+  <input type= submit value = "Most Popular Tags!" />
+</form>
 
 {% if message %}
   <h4>{{message}}!</h4>

@@ -429,6 +429,10 @@ def isEmailUnique(email):
 		return True
 #end login code
 
+def getPopularTags():
+	cursor = conn.cursor()
+	cursor.execute("SELECT tag_name, COUNT(photo_id) from Tagged GROUP BY tag_name ORDER BY COUNT(photo_id) DESC LIMIT 10")
+	return cursor.fetchall()
 
 #Personal profile page
 @app.route('/profile')
@@ -540,6 +544,11 @@ def pass_comment():
 def pass_leaderboard():
 	ldb = getContScore()
 	return render_template('query.html', leaderboard = ldb)
+
+@app.route('/top_tags', methods=['Post'])
+def top_tags():
+	ttgs = getPopularTags()
+	return render_template('query.html', top_tags = ttgs)
 
 #Handles photo deletion
 @app.route('/profile/delete/p<int:photo_id>', methods=['Post'])

@@ -41,7 +41,10 @@
           <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
         </a></li>
         {% else %}
+<<<<<<< HEAD
         <a href = "{{ url_for('tag_search', tag_name = tag[0], owns = owner) }}"></a>
+=======
+>>>>>>> 313b757684984cc1d2f01ed096d641cc138c56c4
         <a href = "{{ url_for('viewuserpost', photo_id = photo[1]) }}">
           <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
         </a></li>
