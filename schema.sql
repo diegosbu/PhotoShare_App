@@ -1,6 +1,10 @@
 CREATE DATABASE IF NOT EXISTS photoshare;
 USE photoshare;
 
+SELECT * FROM Photos;
+
+SELECT album_id FROM Albums WHERE owner_id = 1 AND album_name = 'DEFAULT' LIMIT 1;
+
 CREATE TABLE IF NOT EXISTS Users(	
   user_id INTEGER AUTO_INCREMENT,
 	fname  VARCHAR(100) NOT NULL DEFAULT '',

@@ -159,14 +159,14 @@ def register_user():
 #Gets non default album info
 def getNonDefaultAlbums(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT album_id, album_name FROM Albums WHERE owner_id = '{0}'".format(uid))
+	cursor.execute("SELECT album_id, album_name FROM Albums WHERE owner_id = '{0}' AND album_name <> 'DEFAULT'".format(uid))
 	return cursor.fetchall()
 
 #Gets default album info
 def getDefaultAlbum(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT album_id, album_name FROM Albums WHERE owner_id = '{0}' AND album_name = 'DEFAULT' LIMIT 1".format(uid))
-	return cursor.fetchone()
+	return cursor.fetchall()
 
 #Gets default album info
 def getDefaultAlbumid(uid):
@@ -237,11 +237,6 @@ def getNumLikes(pid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT COUNT(user_id) AS NumOfLikes FROM Likes WHERE photo_id = '{0}'".format(pid))
 	return cursor.fetchall()
-
-def getDefaultAlbum(uid):
-	cursor = conn.cursor()
-	cursor.execute("SELECT album_id FROM Albums WHERE owner_id = '{0}' AND album_name = 'DEFAULT' LIMIT 1".format(uid))
-	return cursor.fetchone()
 
 def getlatestPic(uid):
 	cursor = conn.cursor()
@@ -428,7 +423,7 @@ def isEmailUnique(email):
 @flask_login.login_required
 def protected():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", defalbum=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = True, uid1 = uid, base64=base64)
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", defalbums=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = True, uid1 = uid, base64=base64)
 
 #Loads Other Users' profiles
 @app.route('/user/<email>')
@@ -437,10 +432,10 @@ def show_user_profile(email):
 		uid = getUserIdFromEmail(email)
 		uidcurr = getUserIdFromEmail(flask_login.current_user.id)
 		friend = checkFriends(uidcurr, uid)
-		return render_template('hello.html', message="Here's {0}'s profile".format(email), defalbum=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), frnd = friend, owner = False, visitor = uidcurr, profile = uid, mail = email, base64=base64)
+		return render_template('hello.html', message="Here's {0}'s profile".format(email), defalbums=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), frnd = friend, owner = False, visitor = uidcurr, profile = uid, mail = email, base64=base64)
 	else:
 		uid = getUserIdFromEmail(email)
-		return render_template('hello.html', message="Here's {0}'s profile".format(email), defalbum=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = False, base64=base64)
+		return render_template('hello.html', message="Here's {0}'s profile".format(email), defalbums=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = False, base64=base64)
 
 
 
