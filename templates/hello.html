@@ -43,7 +43,7 @@
   </form>
 {% endif %}
 
-{% if message != 'Welcome to Photoshare' %}
+{% if message != 'Welcome to Photoshare' and visitor %}
 {% if not owner %}
   {% if not frnd %}
   <form action="{{ url_for('add_friend', uid = visitor, friend_id = profile) }}" method=post>
@@ -101,7 +101,7 @@
           <input type = submit value = "Modify" />
         </form></li>
         {% else %}
-        <li><a href =  "{{ url_for('viewUseralbum', album_id = albums[0]) }}"> {{album[1]}} </a> <br>
+        <li><a href =  "{{ url_for('viewUseralbum', album_id = album[0]) }}"> {{album[1]}} </a> <br>
         </li>
         {% endif %}
     {% endfor %}

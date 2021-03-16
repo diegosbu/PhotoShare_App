@@ -70,7 +70,16 @@
     </ul>
 {% endif %}
 
-
+{% if ulikes %}
+<h2>Here are the users who have liked this post!</h2>
+    <ul>
+    {% for spot in ulikes %}
+      <ul>
+        {{spot[0]}}
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
 
 
 

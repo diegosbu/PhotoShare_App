@@ -237,8 +237,8 @@ def getLikes(pid):
 
 # Checks if user is among the list of likes
 def userinLikes(uid, pid):
-	cursor = conn.cursor
-	if(cursor.execute("SELECT user_id FROM Likes WHERE photo_id = '{0}' AND user_id = '{1}')".format(pid, uid))):
+	cursor = conn.cursor()
+	if cursor.execute("SELECT user_id FROM Likes WHERE photo_id = '{0}' AND user_id = '{1}'".format(pid, uid)):
 		return True
 	else:
 		return False
@@ -411,6 +411,11 @@ def insertLikes(uid, pid):
 	print(cursor.execute("INSERT INTO Likes VALUES ('{0}', '{1}')".format(uid, pid)))
 	conn.commit()
 
+def deleteLikes(uid, pid):
+	cursor = conn.cursor()
+	print(cursor.execute("DELETE FROM Likes WHERE user_id = '{0}' AND photo_id = '{1}'".format(uid, pid)))
+	conn.commit()
+
 #Deletes a tag
 def deleteTags(tname):
 	cursor = conn.cursor()
@@ -476,14 +481,21 @@ def viewUseralbum(album_id):
 @flask_login.login_required
 def viewpost(photo_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	likes1 = getNumLikes(photo_id)
-	llist = getLikes(photo_id)
-	return render_template('viewpost.html', name=flask_login.current_user.id, photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = True, base64=base64)
+	liked = userinLikes(uid, photo_id)
+	numlikes = getNumLikes(photo_id)
+	return render_template('viewpost.html', uid1 = uid, likes = numlikes, userinlikes = liked, name=flask_login.current_user.id, photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = True, base64=base64, pid = photo_id)
 
 #Loads page for viewing other Users' personal posts/comments
-@app.route('/user/viewpost<int:photo_id>')
+@app.route('/user/viewpost/<int:photo_id>')
 def viewuserpost(photo_id):
-	return render_template('viewpost.html', photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = False, base64=base64)
+	if flask_login.current_user.is_authenticated:
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		liked = userinLikes(uid, photo_id)
+		numlikes = getNumLikes(photo_id)
+		return render_template('viewpost.html', uid1 = uid, likes = numlikes, userinlikes = liked, photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = False, base64=base64, pid = photo_id)
+	else:
+		numlikes = getNumLikes(photo_id)
+		return render_template('viewpost.html', likes = numlikes, photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = False, base64=base64)
 
 #Handles comment insertion into a post, also checks for anonymous user
 @app.route('/user/addcomment<int:photo_id>', methods=['Post'])
@@ -499,34 +511,50 @@ def addcomment(photo_id):
 	return redirect(request.referrer)
 
 
-@app.route('/user/addfriend<uid><friend_id>', methods=['Post'])
+@app.route('/user/addfriend/<uid>/<friend_id>', methods=['Post'])
 def add_friend(uid, friend_id):
 	insertFriends(uid, friend_id)
 	return redirect(request.referrer)
 
-@app.route('/user/deletefriend<uid><friend_id>', methods=['Post'])
+@app.route('/user/deletefriend/<uid>/<friend_id>', methods=['Post'])
 def delete_friend(uid, friend_id):
 	deleteFriends(friend_id)
 	return redirect(request.referrer)
 
-@app.route('/profile/showfriends<uid>', methods=['Post'])
+@app.route('/profile/showfriends/<uid>', methods=['Post'])
 def show_friends(uid):
 	friends = getUsersFriends(uid)
 	return render_template('query.html', flist = friends)
 
-@app.route('/profile/recommendfriends<uid>', methods=['Post'])
+@app.route('/profile/recommendfriends/<uid>', methods=['Post'])
 def recommend_friends(uid):
 	friendoffriend = getFriendsofFriends(uid)
 	return render_template('query.html', flist = friendoffriend)
 
+@app.route('/viewpost/addlike/<uid>/<photo_id>', methods=['Post'])
+def add_like(uid, photo_id):
+	insertLikes(uid, photo_id)
+	return redirect(request.referrer)
 
-@app.route('/profile/tagsearch/<tag_name> <owns> <currview>', methods = ['Get', 'Post'])
+@app.route('/viewpost/remlike/<uid>/<photo_id>', methods=['Post'])
+def remove_like(uid, photo_id):
+	deleteLikes(uid, photo_id)
+	return redirect(request.referrer)
+
+@app.route('/viewpost/likelist/<photo_id>', methods=['Post'])
+def users_likes(photo_id):
+	llist = getLikes(photo_id)
+	return render_template('query.html', ulikes = llist)
+
+
+
+@app.route('/profile/tagsearch/<tag_name>/<owns>/<currview>', methods = ['Get', 'Post'])
 @flask_login.login_required
 def tag_search(tag_name, owns, currview):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	return render_template('query.html', tname = tag_name, currview = 1, owner = owns, photos = getUserTaggedPhotos(tag_name, uid), base64 = base64)
 
-@app.route('/profile/tagsearcha/<tag_name> <owns> <currview>', methods=['Post'])
+@app.route('/profile/tagsearcha/<tag_name>/<owns>/<currview>', methods=['Post'])
 @flask_login.login_required
 def tag_searchAll(tag_name, owns, currview):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
@@ -573,7 +601,7 @@ def top_tags():
 	return render_template('query.html', top_tags = ttgs)
 
 #Handles photo deletion
-@app.route('/profile/delete/p<int:photo_id>', methods=['Post'])
+@app.route('/profile/delete/p/<int:photo_id>', methods=['Post'])
 @flask_login.login_required
 def delete_photo(photo_id):
 	deletePhoto(photo_id)
@@ -597,14 +625,14 @@ def remove_photo(photo_id):
 	return redirect(request.referrer)
 
 #Handles album deletion
-@app.route('/profile/delete/a<int:album_id>', methods=['Post'])
+@app.route('/profile/delete/a/<int:album_id>', methods=['Post'])
 @flask_login.login_required
 def delete_album(album_id):
 	deleteAlbums(album_id)
 	return redirect(url_for('protected'))
 
 #Loads edit page for modifying album
-@app.route('/profile/edit/a<int:album_id>', methods=['Post', 'Get'])
+@app.route('/profile/edit/a/<int:album_id>', methods=['Post', 'Get'])
 @flask_login.login_required
 def edit_album(album_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)

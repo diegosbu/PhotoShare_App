@@ -32,16 +32,19 @@
 
 {% if likes %}
 Number of likes: {{likes[0]}}
-  {% if user %}
+  {% if uid1 %}
     {% if not userinlikes %}
-    <form action="{{ url_for('add_like', uid = uid1) }}" method=post>
+    <form action="{{ url_for('add_like', uid = uid1, photo_id = pid) }}" method=post>
       <input type = submit value = "Like" />
     </form>
     {% else %}
-    <form action="{{ url_for('remove_like', uid = uid1) }}" method=post>
+    <form action="{{ url_for('remove_like', uid = uid1, photo_id = pid) }}" method=post>
       <input type = submit value = "Unlike" />
     </form>
     {% endif %}
+    <form action="{{ url_for('users_likes', photo_id = pid) }}" method=post>
+      <input type= submit value = "Users who have liked this post" />
+    </form>
   {% endif %}
 {% endif %}
 
