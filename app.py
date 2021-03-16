@@ -206,6 +206,18 @@ def getTaggedPhotos(tname):
 					(SELECT photo_id FROM Tagged WHERE tag_name = '{0}')".format(tname))
 	return cursor.fetchall()
 
+def getUserTags(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT tag_name FROM Tagged WHERE photo_id IN (SELECT photo_id FROM Photos WHERE user_id = '{0}')".format(uid))
+	return cursor.fetchall()
+
+#Gets User's photos with specific tag
+def getUserTaggedPhotos(tname, uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN \
+					(SELECT P.photo_id FROM Tagged T, Photos P WHERE T.tag_name = '{0}' AND P.user_id = '{1}' AND P.photo_id = T.photo_id)".format(tname, uid))
+	return cursor.fetchall()
+
 # Gets comments info related to a photo
 def getComments(pid):
 	cursor = conn.cursor()
@@ -237,11 +249,6 @@ def getNumLikes(pid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT COUNT(user_id) AS NumOfLikes FROM Likes WHERE photo_id = '{0}'".format(pid))
 	return cursor.fetchall()
-
-
-
-
-
 
 def getlatestPic(uid):
 	cursor = conn.cursor()
@@ -455,7 +462,7 @@ def pass_user_profile():
 @flask_login.login_required
 def viewalbum(album_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('editalbum.html', name=flask_login.current_user.id, picsinalbum=getAlbumPhotos(album_id), owner = True, edit = False, base64=base64)
+	return render_template('editalbum.html', name=flask_login.current_user.id, tags = getUserTags(uid), picsinalbum=getAlbumPhotos(album_id), owner = True, edit = False, base64=base64)
 
 #Loads page for viewing other Users' album
 @app.route('/user/viewalbum<int:album_id>')
@@ -511,13 +518,11 @@ def recommend_friends(uid):
 	return render_template('query.html', flist = friendoffriend)
 
 
-@app.route('/profile/tagsearch/<tag_name><owns>', methods=['Post'])
-def tag_search(tag_name, owns):
-	if owns:
-		getUserIdFromEmail(flask_loging.current_user.id)
-		return render_template('query.html', owner = owns, currview = myt, myt = getUserTaggedPhotos(tag_name, ), allt = getTaggedPhotos(tag_name))
-	return render_template('query.html', owner = owns, currview = myt, allt = getTaggedPhotos(tag_name))
-
+@app.route('/profile/tagsearch/<tag_name><owns><currview>', methods=['Post', 'Get'])
+@flask_login.login_required
+def tag_search(tag_name, owns, currview):
+		uid = getUserIdFromEmail(flask_login.current_user.id)
+		return render_template('query.html', currview = 1, owner = owns, myt = getUserTaggedPhotos(tag_name, uid))
 
 #Displays search results
 @app.route('/showcommentsearch/<clist>')

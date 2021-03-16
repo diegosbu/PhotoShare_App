@@ -11,6 +11,12 @@
   {% endif %}
 {% endif %}
 
+{% if owner %}
+{% for tag in tags %}
+<a href = "{{ url_for('tag_search', tag_name = tag, owns = true, currview = 1) }}" method=post>  {{ tag[0] }}  </a>
+{% endfor %}
+{% endif %}
+
 {% if picsinalbum %}
 {% if owner %}
 <h2>Here are photos in your album</h2>
@@ -31,12 +37,11 @@
         {% endif %}
         {% endif %}
         {%if owner %}
-        <a href = "{{ url_for('tag_search', tag_name = tag[0], owns = owner) }}"  method=post></a>
         <a href = "{{ url_for('viewpost', photo_id = photo[1]) }}" method=post>
           <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
         </a></li>
         {% else %}
-        <a href = "{{ url_for('tag_search', tag_name = tag[0], owns = ) }}"></a>
+        <a href = "{{ url_for('tag_search', tag_name = tag[0], owns = owner) }}"></a>
         <a href = "{{ url_for('viewuserpost', photo_id = photo[1]) }}">
           <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
         </a></li>

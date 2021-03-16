@@ -27,7 +27,7 @@
 {% endif %}
 
 {% if message != 'Welcome to Photoshare' %}
-{% if not owner%}
+{% if not owner %}
   {% if not frnd %}
   <form action="{{ url_for('add_friend', uid = visitor, friend_id = profile) }}" method=post>
     <input type = submit value = "Add friend" />

@@ -21,7 +21,19 @@
     </ul>
 {% endif %}
 
-{% if myt %}
+{% if currview == 1%}
+  <h2>Here are all your photos with this tag</h2>
+    <ul>
+    {% for photo in myt %}
+      <ul>
+        bounce
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if allt and currview == myt2%}
   <h2>Here all your photos with this tag</h2>
     <ul>
     {% for photo in myt %}
@@ -31,6 +43,7 @@
     {% endfor %}
     </ul>
 {% endif %}
+
 
 
 
