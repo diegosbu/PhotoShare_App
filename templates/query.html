@@ -31,7 +31,9 @@
 {% endif %}
 
 {% if currview == 1 %}
-
+<form action="{{ url_for('tag_searchAll', tag_name = tname, owns = owner, currview = 2) }}" method=post>
+  <input type = submit value = "Show sitewide photos" />
+</form>
 <h2>Here are all your photos that have this tag!</h2>
     <ul>
     {% for photo in photos %}
@@ -42,10 +44,13 @@
     </ul>
 {% endif %}
 
-{% if allt and currview == myt2%}
-  <h2>Here all your photos with this tag</h2>
+{% if currview == 2 %}
+<form action="{{ url_for('tag_search', tag_name = tname, owns = owner, currview = 1) }}" method=post>
+  <input type = submit value = "Show your photos" />
+</form>
+<h2>Here are all sitewide photos that have this tag!</h2>
     <ul>
-    {% for photo in myt %}
+    {% for photo in photos %}
       <ul>
         <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
       </ul>

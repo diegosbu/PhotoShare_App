@@ -23,7 +23,7 @@
 {% if owner %}
 {% if tags %}
 {% for tag in tags %}
-<a href = "{{ url_for('tag_search', tag_name = tag[0], owns = false, currview = 1) }}">  {{ tag[0] }}  </a>
+<a href = "{{ url_for('tag_search', tag_name = tag[0], owns = true, currview = 1) }}">  {{ tag[0] }}  </a>
 {% endfor %}
 {% endif %}
 {% endif %}
