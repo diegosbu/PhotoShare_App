@@ -11,13 +11,37 @@
 <form action="{{ url_for('pass_leaderboard') }}" method=post>
   <input type = submit value = "Top Contributors!" />
 </form>
+
 {% if message %}
   <h4>{{message}}!</h4>
 {% endif %}
 <title>Photoshare</title>
 {% if name %}
   <h1>Hello {{ name }}!</h1>
+  <form action="{{ url_for('show_friends', uid = uid1) }}" method=post>
+    <input type = submit value = "Show Friends" />
+  </form>
+  <form action="{{ url_for('recommend_friends', uid = uid1) }}" method=post>
+    <input type = submit value = "Show Friend Recommendations" />
+  </form>
 {% endif %}
+
+{% if message != 'Welcome to Photoshare' %}
+{% if not owner%}
+  {% if not frnd %}
+  <form action="{{ url_for('add_friend', uid = visitor, friend_id = profile) }}" method=post>
+    <input type = submit value = "Add friend" />
+  </form>
+  {% else %}
+  <form action="{{ url_for('delete_friend', uid = visitor, friend_id = profile) }}" method=post>
+    <input type = submit value = "Remove friend" />
+  </form>
+  {% endif %}
+{% endif %}
+{% endif %}
+
+
+
 
 {% if photos %}
 {% if owner %}
@@ -41,6 +65,29 @@
         </a>
         {% endif %}
       </li>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+
+
+{% if defalbum %}
+{% if owner %}
+<h2>Here is your default albums</h2>
+{% else %}
+<h2>Here are their albums</h2>
+{% endif %}
+    <ul>
+    {% for album in defalbums %}
+        {% if owner%}
+        <li><a href =  "{{ url_for('viewalbum', album_id = album[0]) }}"> {{album[1]}} </a> <br>
+        <form action="{{ url_for('edit_album', album_id = album[0]) }}" method=post>
+          <input type = submit value = "Modify" />
+        </form></li>
+        {% else %}
+        <li><a href =  "{{ url_for('viewUseralbum', album_id = album[0]) }}"> {{album[1]}} </a> <br>
+        </li>
+        {% endif %}
     {% endfor %}
     </ul>
 {% endif %}

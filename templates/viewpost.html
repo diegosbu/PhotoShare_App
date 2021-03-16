@@ -29,9 +29,22 @@
     </ul>
 {% endif %}
 
+
 {% if likes %}
-    Number of likes: {{likes[0]}}
+Number of likes: {{likes[0]}}
+  {% if user %}
+    {% if not userinlikes %}
+    <form action="{{ url_for('add_like', uid = uid1) }}" method=post>
+      <input type = submit value = "Like" />
+    </form>
+    {% else %}
+    <form action="{{ url_for('remove_like', uid = uid1) }}" method=post>
+      <input type = submit value = "Unlike" />
+    </form>
+    {% endif %}
+  {% endif %}
 {% endif %}
+
 
 {% if comments %}
     <ul>

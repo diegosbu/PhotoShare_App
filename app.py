@@ -147,6 +147,8 @@ def register_user():
 		#log user in
 		user = User()
 		user.id = email
+		uid = getUserIdFromEmail(email)
+		insertAlbum(uid, "DEFAULT")
 		flask_login.login_user(user)
 		return render_template('hello.html', name=email, message='Account Created!')
 	else:
@@ -154,11 +156,23 @@ def register_user():
 		return flask.redirect(flask.url_for('register'))
 
 
-#Gets album info
-def getUserAlbums(uid):
+#Gets non default album info
+def getNonDefaultAlbums(uid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT album_id, album_name FROM Albums WHERE owner_id = '{0}'".format(uid))
 	return cursor.fetchall()
+
+#Gets default album info
+def getDefaultAlbum(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id, album_name FROM Albums WHERE owner_id = '{0}' AND album_name = 'DEFAULT' LIMIT 1".format(uid))
+	return cursor.fetchone()
+
+#Gets default album info
+def getDefaultAlbumid(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id FROM Albums WHERE owner_id = {0} AND album_name = 'DEFAULT' LIMIT 1".format(uid))
+	return cursor.fetchone()
 
 #Gets photos in specific album
 def getAlbumPhotos(aid):
@@ -177,10 +191,11 @@ def getSinglePhoto(pid):
 	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id = '{0}'".format(pid))
 	return cursor.fetchall() #NOTE list of tuples, [(imgdata, pid), ...]
 
-#Gets photos that don't belong to any albums
+#Gets photos that don't belong to any non default albums
 def getUsersFreePhotos(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id NOT IN (SELECT photo_id FROM PhotoAlbums) \
+	cursor.execute("SELECT imgdata, photo_id, caption FROM Photos WHERE photo_id IN (SELECT photo_id FROM PhotoAlbums WHERE album_id IN \
+						(SELECT album_id FROM Albums WHERE owner_id = '{0}' AND album_name = 'DEFAULT') ) \
 						AND user_id = '{0}'".format(uid))
 	return cursor.fetchall()
 
@@ -212,13 +227,26 @@ def getLikes(pid):
 # Checks if user is among the list of likes
 def userinLikes(uid, pid):
 	cursor = conn.cursor
-	cursor.execute("SELECT COUNT(*) FROM Likes WHERE user_id IN (SELECT user_id FROM Likes WHERE photo_id = '{0}' AND user_id = '{1}')".format(pid, uid))
+	if(cursor.execute("SELECT user_id FROM Likes WHERE photo_id = '{0}' AND user_id = '{1}')".format(pid, uid))):
+		return True
+	else:
+		return False
 
 # Gets number of likes for a photo
 def getNumLikes(pid):
 	cursor = conn.cursor()
 	cursor.execute("SELECT COUNT(user_id) AS NumOfLikes FROM Likes WHERE photo_id = '{0}'".format(pid))
 	return cursor.fetchall()
+
+def getDefaultAlbum(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT album_id FROM Albums WHERE owner_id = '{0}' AND album_name = 'DEFAULT' LIMIT 1".format(uid))
+	return cursor.fetchone()
+
+def getlatestPic(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT photo_id FROM Photos WHERE user_id = '{0}' ORDER BY photo_id DESC LIMIT 1".format(uid))
+	return cursor.fetchone()[0]
 
 def getUserIdFromEmail(email):
 	cursor = conn.cursor()
@@ -228,14 +256,23 @@ def getUserIdFromEmail(email):
 #Gets friends list
 def getUsersFriends(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT friend_id FROM Friends WHERE user_id = '{0}'".format(uid))
+	cursor.execute("SELECT email FROM Users WHERE user_id IN (SELECT friend_id FROM Friends WHERE user_id = {0})".format(uid))
 	return cursor.fetchall()
+
+#Checks if uid1 and uid2 are friends/if uid1 added uid2 as a friend
+def checkFriends(uid1, uid2):
+	cursor = conn.cursor()
+	if (cursor.execute("SELECT user_id FROM Friends WHERE user_id = {0} AND friend_id = {1}".format(uid1, uid2))):
+		return True
+	else:
+		return False
+
 
 #Gets users with mutual friends
 def getFriendsofFriends(uid):
 	cursor = conn.cursor()
-	cursor.execute("SELECT user_id FROM Friends WHERE friend_id IN dbo.getUsersFriends('{0}') \
-					AND user_id <> '{0}'".format(uid))
+	cursor.execute("SELECT email FROM Users WHERE user_id IN (SELECT user_id FROM Friends WHERE friend_id IN (SELECT friend_id FROM Friends WHERE user_id = {0}) \
+					AND user_id <> '{0}')".format(uid))
 	return cursor.fetchall()
 
 #Calculates/retrieves user's contribution score leaderboard
@@ -277,10 +314,8 @@ def getUsers(hmtown):
 	return cursor.fetchone()[0]
 
 #Inserts friend relationship
-def insertFriends(email1, email2):
+def insertFriends(uid1, uid2):
 	cursor = conn.cursor()
-	uid1 = getUserIdFromEmail(email1)
-	uid2 = getUserIdFromEmail(email2)
 	print(cursor.execute("INSERT INTO Friends (user_id, friend_id) VALUES ('{0}', '{1}')" \
 							.format(uid1, uid2)))
 	conn.commit()
@@ -292,8 +327,10 @@ def deleteFriends(fid):
 	conn.commit()
 
 #Inserts album info
-def insertAlbum(uid, aname, date):
+def insertAlbum(uid, aname):
 	cursor = conn.cursor()
+	now = datetime.now()
+	date = now.strftime('%Y-%m-%d')
 	print(cursor.execute("INSERT INTO Albums (album_name, owner_id, date_created) VALUES ('{0}', '{1}', '{2}')" \
 							.format(aname, uid, date)))
 	conn.commit()
@@ -319,12 +356,27 @@ def deletePhotoAlbum (pid):
 	cursor.execute("DELETE FROM PhotoAlbums WHERE photo_id = '{0}'".format(pid))
 	conn.commit()
 
-#Inserts photo relationship to an album
+#Inserts photo relationship to default album
 def insertPhotoAlbum(aid, pid):
 	cursor = conn.cursor()
-	print(cursor.execute("INSERT INTO PhotoAlbums (album_id, photo_id) VALUES ('{0}', '{1}')" \
+	print(cursor.execute("INSERT INTO PhotoAlbums (album_id, photo_id) VALUES ('{0}', '{1}')".format(aid, pid)))
+	conn.commit()
+
+
+
+#Place photo from default album into separate album
+def setNonDefaultAlbum(aid, pid):
+	cursor = conn.cursor()
+	print(cursor.execute("UPDATE PhotoAlbums set album_id = '{0}' WHERE photo_id = '{1}'" 
 							.format(aid, pid)))
 	conn.commit()
+
+#Inserts photo into default album
+def setDefaultAlbum(uid, pid):
+	cursor = conn.cursor()
+	print(cursor.execute("UPDATE PhotoAlbums set album_id = (SELECT album_id FROM Albums WHERE owner_id = '{0}' AND album_name = 'DEFAULT' LIMIT 1) WHERE photo_id = '{1}'".format(uid, pid)))
+	conn.commit()
+
 
 #Inserts tag info
 def insertTags(tname):
@@ -376,13 +428,21 @@ def isEmailUnique(email):
 @flask_login.login_required
 def protected():
 	uid = getUserIdFromEmail(flask_login.current_user.id)
-	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", photos=getUsersFreePhotos(uid), albums=getUserAlbums(uid), owner = True, base64=base64)
+	return render_template('hello.html', name=flask_login.current_user.id, message="Here's your profile", defalbum=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = True, uid1 = uid, base64=base64)
 
 #Loads Other Users' profiles
 @app.route('/user/<email>')
 def show_user_profile(email):
-	uid = getUserIdFromEmail(email)
-	return render_template('hello.html', message="Here's {0}'s profile".format(email), photos=getUsersFreePhotos(uid), albums=getUserAlbums(uid), owner = False, base64=base64)
+	if flask_login.current_user.is_authenticated:
+		uid = getUserIdFromEmail(email)
+		uidcurr = getUserIdFromEmail(flask_login.current_user.id)
+		friend = checkFriends(uidcurr, uid)
+		return render_template('hello.html', message="Here's {0}'s profile".format(email), defalbum=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), frnd = friend, owner = False, visitor = uidcurr, profile = uid, mail = email, base64=base64)
+	else:
+		uid = getUserIdFromEmail(email)
+		return render_template('hello.html', message="Here's {0}'s profile".format(email), defalbum=getDefaultAlbum(uid), albums=getNonDefaultAlbums(uid), owner = False, base64=base64)
+
+
 
 #Passes search query to load user profile
 @app.route('/usersearch', methods=['Post'])
@@ -407,6 +467,8 @@ def viewUseralbum(album_id):
 @flask_login.login_required
 def viewpost(photo_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
+	likes1 = getNumLikes(photo_id)
+	llist = getLikes(photo_id)
 	return render_template('viewpost.html', name=flask_login.current_user.id, photos=getSinglePhoto(photo_id), comments = getComments(photo_id), owner = True, base64=base64)
 
 #Loads page for viewing other Users' personal posts/comments
@@ -427,6 +489,28 @@ def addcomment(photo_id):
 		insertComments(ctxt, uid, photo_id)
 	return redirect(request.referrer)
 
+
+@app.route('/user/addfriend<uid><friend_id>', methods=['Post'])
+def add_friend(uid, friend_id):
+	insertFriends(uid, friend_id)
+	return redirect(request.referrer)
+
+@app.route('/user/deletefriend<uid><friend_id>', methods=['Post'])
+def delete_friend(uid, friend_id):
+	deleteFriends(friend_id)
+	return redirect(request.referrer)
+
+@app.route('/profile/showfriends<uid>', methods=['Post'])
+def show_friends(uid):
+	friends = getUsersFriends(uid)
+	return render_template('query.html', flist = friends)
+
+@app.route('/profile/recommendfriends<uid>', methods=['Post'])
+def recommend_friends(uid):
+	friendoffriend = getFriendsofFriends(uid)
+	return render_template('query.html', flist = friendoffriend)
+
+
 #Displays search results
 @app.route('/showcommentsearch/<clist>')
 def show_commentsearch(clist):
@@ -444,7 +528,6 @@ def pass_leaderboard():
 	ldb = getContScore()
 	return render_template('query.html', leaderboard = ldb)
 
-
 #Handles photo deletion
 @app.route('/profile/delete/p<int:photo_id>', methods=['Post'])
 @flask_login.login_required
@@ -457,7 +540,7 @@ def delete_photo(photo_id):
 @flask_login.login_required
 def add_photoalbum(photo_id):
 	pid = photo_id
-	insertPhotoAlbum(session['aid'], pid)
+	setNonDefaultAlbum(session['aid'], pid)
 	return redirect(request.referrer)
 
 #Handles photo removal from album
@@ -465,7 +548,8 @@ def add_photoalbum(photo_id):
 @flask_login.login_required
 def remove_photo(photo_id):
 	pid = photo_id
-	deletePhotoAlbum(pid)
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	setDefaultAlbum(uid, pid)
 	return redirect(request.referrer)
 
 #Handles album deletion
@@ -482,7 +566,10 @@ def edit_album(album_id):
 	uid = getUserIdFromEmail(flask_login.current_user.id)
 	aid = album_id
 	session['aid'] = aid
-	return render_template('editalbum.html', name=flask_login.current_user.id, message="Add or remove photos from your album", photos=getUsersFreePhotos(uid), picsinalbum=getAlbumPhotos(aid), owner = True, edit = True, base64=base64)
+	if aid == getDefaultAlbumid(uid):
+		return render_template('editalbum.html', name=flask_login.current_user.id, message="Add or remove photos from your album", defalbum = True, picsinalbum=getAlbumPhotos(aid), owner = True, edit = True, base64=base64)
+	else:
+		return render_template('editalbum.html', name=flask_login.current_user.id, message="Add or remove photos from your album", photos=getUsersFreePhotos(uid), picsinalbum=getAlbumPhotos(aid), owner = True, edit = True, base64=base64)
 
 #begin photo uploading code
 # photos uploaded using base64 encoding so they can be directly embeded in HTML
@@ -501,6 +588,9 @@ def upload_file():
 		cursor = conn.cursor()
 		print(cursor.execute('''INSERT INTO Photos (imgdata, user_id, caption) VALUES (%s, %s, %s )''', (photo_data, uid, caption)))
 		conn.commit()
+		aid = getDefaultAlbumid(uid)
+		pid = getlatestPic(uid)
+		insertPhotoAlbum(aid, pid)
 		return redirect('profile')
 	#The method is GET so we return a  HTML form to upload the a photo.
 	else:
@@ -530,6 +620,6 @@ def hello():
 
 
 if __name__ == "__main__":
-	#this is invoked when in the shell  you run
+	#this is invoked when in the shell you run
 	#$ python app.py
 	app.run(port=5000, debug=True)

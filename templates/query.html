@@ -22,6 +22,16 @@
 {% endif %}
 
 
+{% if flist %}
+<h2>Here are your friends!</h2>
+    <ul>
+    {% for spot in flist %}
+      <ul>
+        {{spot[0]}}
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
 
 
 {% if message is none %}

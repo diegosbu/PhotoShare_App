@@ -24,9 +24,11 @@
         <form action="{{ url_for('delete_photo', photo_id = photo[1]) }}" method=post>
           <input type = submit value = "Delete" />
         </form>
+        {% if not defalbum %}
         <form action="{{ url_for('remove_photo', photo_id = photo[1]) }}" method=post>
             <input type = submit value = "Remove from album" />
         </form>
+        {% endif %}
         {% endif %}
         {%if owner %}
         <a href = "{{ url_for('viewpost', photo_id = photo[1]) }}">
@@ -40,6 +42,8 @@
     {% endfor %}
     </ul>
 {% endif %}
+
+
 
 {% if owner and edit %}
 {% if photos %}
