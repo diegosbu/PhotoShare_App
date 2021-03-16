@@ -60,7 +60,10 @@
         <form action="{{ url_for('add_photoalbum', photo_id = photo[1]) }}" method=post>
             <input type = submit value = "Add to album" />
         </form>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/></li>
+        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/><br>
+      
+      </li>
+
     {% endfor %}
     </ul>
 {% endif %}
