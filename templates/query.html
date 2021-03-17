@@ -34,8 +34,11 @@
 <h2>Here are all the photos that have all the tags you requested</h2>
     <ul>
     {% for photo in photosearch %}
+    {{photo[1]}}
       <ul>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+        <a href = "{{ url_for('viewuserpost', photo_id = photo[1]) }}">
+          <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+        </a>
       </ul>
     {% endfor %}
     </ul>
@@ -50,7 +53,9 @@
     <ul>
     {% for photo in photos %}
       <ul>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+        <a href = "{{ url_for('viewpost', photo_id = photo[1]) }}">
+          <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+        </a>
       </ul>
     {% endfor %}
     </ul>
@@ -64,7 +69,8 @@
     <ul>
     {% for photo in photos %}
       <ul>
-        <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
+          {{photo[1]}}
+          <img src='data:image/jpg;base64, {{ base64.b64encode(photo[0]).decode("ascii") }}'/>
       </ul>
     {% endfor %}
     </ul>
@@ -87,6 +93,17 @@
 <h2>Here are your friends!</h2>
     <ul>
     {% for spot in flist %}
+      <ul>
+        {{spot[0]}}
+      </ul>
+    {% endfor %}
+    </ul>
+{% endif %}
+
+{% if mlist %}
+<h2>Here are your recommended friends!</h2>
+    <ul>
+    {% for spot in mlist %}
       <ul>
         {{spot[0]}}
       </ul>

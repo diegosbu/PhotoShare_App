@@ -402,7 +402,7 @@ def insertComments(ctxt, uid, pid):
 	cursor = conn.cursor()
 	now = datetime.now()
 	formatted_date = now.strftime('%Y-%m-%d')
-	print(cursor.execute("INSERT INTO Comments (comment_text, owner_id, date_created, photo_id) VALUES ('{0}', '{1}', '{2}', '{3}')" \
+	print(cursor.execute("INSERT INTO Comments (comment_text, owner_id, date_created, photo_id) VALUES (\"{0}\", '{1}', '{2}', '{3}')" \
 							.format(ctxt, uid, formatted_date, pid)))
 	conn.commit()
 
@@ -529,7 +529,7 @@ def show_friends(uid):
 @app.route('/profile/recommendfriends/<uid>', methods=['Post'])
 def recommend_friends(uid):
 	friendoffriend = getFriendsofFriends(uid)
-	return render_template('query.html', flist = friendoffriend)
+	return render_template('query.html', mlist = friendoffriend)
 
 @app.route('/viewpost/addlike/<uid>/<photo_id>', methods=['Post'])
 def add_like(uid, photo_id):
