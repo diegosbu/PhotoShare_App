@@ -437,6 +437,17 @@ def getPopularTags():
 	cursor.execute("SELECT tag_name, COUNT(photo_id) from Tagged GROUP BY tag_name ORDER BY COUNT(photo_id) DESC LIMIT 10")
 	return cursor.fetchall()
 
+def getPhotosYouMayLike(uid):
+	cursor = conn.cursor()
+	cursor.execute("SELECT P.photo_id, COUNT(P.photo_id) FROM \
+Photos P, Tagged T, \
+(SELECT COUNT(tag_name) AS tcount, photo_id FROM Tagged GROUP BY photo_id) T1,\
+(SELECT T.tag_name AS tname FROM Tagged T, Photos P WHERE T.photo_id=P.photo_id AND P.user_id = '{0}' GROUP BY T.tag_name ORDER BY (T.tag_name) DESC LIMIT 5) T2 \
+WHERE P.photo_id=T.photo_id AND T.tag_name=T2.tname AND P.photo_id=T1.photo_id AND P.user_id != '{1}' \
+GROUP BY T1.photo_id ORDER BY COUNT(P.photo_id) DESC, T1.tcount".format(uid, uid))
+	photos = [[p[0]] for p in cursor.fetchall()]
+	return photos
+
 #Personal profile page
 @app.route('/profile')
 @flask_login.login_required
@@ -599,6 +610,11 @@ def pass_leaderboard():
 def top_tags():
 	ttgs = getPopularTags()
 	return render_template('query.html', top_tags = ttgs)
+
+@app.route('/photos_you_may_like', methods=['Post'])
+def photos_you_may_like():
+	uid = getUserIdFromEmail(flask_login.current_user.id)
+	return render_template('query.html', pyml = getPhotosYouMayLike(uid), base64=base64)
 
 #Handles photo deletion
 @app.route('/profile/delete/p/<int:photo_id>', methods=['Post'])

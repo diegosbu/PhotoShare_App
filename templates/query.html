@@ -30,6 +30,18 @@
     </ul>
 {% endif %}
 
+{% if pyml %}
+    <ul>
+      {% for photo in pyml %}
+        <ul>
+          <img src=<img src='data:image/png;base64, {{photo[0]}}'/>
+        </ul>
+      {% endfor %}
+    </ul>
+{% endif %} 
+
+
+
 {% if photosearch %}
 <h2>Here are all the photos that have all the tags you requested</h2>
     <ul>

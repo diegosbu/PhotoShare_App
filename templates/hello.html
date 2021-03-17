@@ -18,6 +18,12 @@
 <form action="{{ url_for('top_tags') }}" method=post>
   <input type= submit value = "Most Popular Tags!" />
 </form>
+{% if owner %}
+<form action="{{ url_for('photos_you_may_like') }}" method=post>
+  <input type= submit value = "Photos You May Like!" />
+</form>
+{% endif %}
+
 
 {% if message %}
   <h4>{{message}}!</h4>
