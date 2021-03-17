@@ -446,6 +446,10 @@ Photos P, Tagged T, \
 WHERE P.photo_id=T.photo_id AND T.tag_name=T2.tname AND P.photo_id=T1.photo_id AND P.user_id != '{1}' \
 GROUP BY T1.photo_id ORDER BY COUNT(P.photo_id) DESC, T1.tcount".format(uid, uid))
 	photos = [[p[0]] for p in cursor.fetchall()]
+	for p in photos:
+		cursor.execute("SELECT P.imgdata FROM Photos P WHERE photo_id='{0}'".format(p[0]))
+		photoData=cursor.fetchall()[0]
+		p.extend(photoData)
 	return photos
 
 #Personal profile page

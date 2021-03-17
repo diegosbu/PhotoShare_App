@@ -34,7 +34,7 @@
     <ul>
       {% for photo in pyml %}
         <ul>
-          <img src=<img src='data:image/png;base64, {{photo[0]}}'/>
+          <img src='data:image/jpg;base64, {{ base64.b64encode(photo[1]).decode("ascii") }}'/>
         </ul>
       {% endfor %}
     </ul>
